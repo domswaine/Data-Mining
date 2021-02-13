@@ -1,4 +1,7 @@
+from os import system
 from sklearn.datasets import load_iris
+from sklearn.model_selection import train_test_split
+from sklearn import tree, metrics
 
 print("Section 2", "\n")
 
@@ -59,15 +62,66 @@ for (length, width), class_counts in sepal_lengths_widths.items():
     print("Sepal length: %scm, sepal width: %scm => %s" % (length, width, most_freq))
 print("")
 
-classifier = {k: most_fequent_class(v)[0] for k, v in sepal_lengths_widths.items()}
-y_hat = [classifier[slw_extractor(fv)] for fv in iris.data]
+clf = {k: most_fequent_class(v)[0] for k, v in sepal_lengths_widths.items()}
+y_hat = [clf[slw_extractor(fv)] for fv in iris.data]
 
-def get_accuracy(y, y_hat, M) -> float:
+def get_count(y, y_hat) -> int:
     count = 0
     for target, calculated in zip(y, y_hat):
         if target == calculated:
             count += 1
-    return count / M
+    return count
+
+def get_accuracy(y, y_hat, M) -> float:
+    return get_count(y, y_hat) / M
 
 print("1R classifier accuracy: %s" % round(get_accuracy(iris.target, y_hat, M), 2))
+
+del M, sepal_lengths, sepal_length, class_counts, sepal_width, sepal_widths
+del slw_extractor, sepal_lengths_widths, length, width, clf, y_hat
 print("")
+
+
+print("Section 4")
+
+X_train, X_test, y_train, y_test = train_test_split(iris.data, iris.target, random_state=0)
+clf = tree.DecisionTreeClassifier(random_state=0)
+clf.fit(X_train, y_train)
+y_hat = clf.predict(X_test)
+
+M_test = len(y_test)
+count = get_count(y_test, y_hat)
+accuracy = (count / M_test) * 100
+
+print("Number of correct predictions: %d out of %d = %f%%" % (count, M_test, accuracy))
+del count, M_test, accuracy
+
+training_score = clf.score(X_train, y_train) * 100
+test_score = clf.score(X_test, y_test) * 100
+
+print("Training score: %f%%" % training_score)
+print("Test score: %f%%" % test_score)
+del training_score, test_score
+
+sklearn_accuracy = metrics.accuracy_score(y_test, y_hat)
+print("Accuracy (sk-learn): %f%%" % sklearn_accuracy)
+del sklearn_accuracy
+
+precision = metrics.precision_score(y_test, y_hat, average=None)
+print("Precision: %s" % get_counts(precision))
+del precision
+
+recall = metrics.recall_score(y_test, y_hat, average=None)
+print("Recall: %s" % get_counts(recall))
+del recall
+
+f1 = metrics.f1_score(y_test, y_hat, average=None)
+print("F1: %s" % get_counts(f1))
+del f1
+
+# print(clf.decision_path(iris.data))
+# tree.export_graphviz(clf, out_file="plots/p3-iris-decision-tree.dot", class_names=classes, impurity=True)
+# system("sudo apt install graphviz")
+# system("dot plots/p3-iris-decision-tree.dot -Tpng > plots/p3-iris-decision-tree.png")
+
+del X_test, X_train, clf, y_hat, y_test, y_train
